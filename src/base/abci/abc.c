@@ -42649,9 +42649,9 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     extern void Gia_PolynBuild2Test( Gia_Man_t * pGia, int nExtra, int fSigned, int fVerbose, int fVeryVerbose );
     Vec_Int_t * vOrder = NULL;
-    int c, nExtra = -1, fOld = 0, fSimple = 1, fSigned = 0, fVerbose = 0, fVeryVerbose = 0;
+    int c, nExtra = -1, fOld = 0, fSimple = 1, fSigned = 0, fVerbose = 0, fVeryVerbose = 0, fBooth = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "Noasvwh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "Noasvhb" ) ) != EOF )
     {
         switch ( c )
         {
@@ -42667,7 +42667,7 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
                 goto usage;
             break;
         case 'o':
-            fOld ^= 1;
+            fOld ^= 0;
             break;
         case 'a':
             fSimple ^= 1;
@@ -42675,10 +42675,10 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
         case 's':
             fSigned ^= 1;
             break;
-        case 'v':
-            fVerbose ^= 1;
+        case 'b':
+            fBooth ^= 1;
             break;
-        case 'w':
+        case 'v':
             fVeryVerbose ^= 1;
             break;
         case 'h':
@@ -42698,7 +42698,12 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
         Gia_PolynBuild( pAbc->pGia, vOrder, fSigned, fVerbose, fVeryVerbose );
         Vec_IntFreeP( &vOrder );
     }
+    else if(fBooth)
+    {
+        Gia_PolynCoreDetectTestCunxi(pAbc->pGia);
+    }
     else
+    
         Gia_PolynBuild2Test( pAbc->pGia, nExtra, fSigned, fVerbose, fVeryVerbose );
     return 0;
 
@@ -42709,6 +42714,7 @@ usage:
     Abc_Print( -2, "\t-o     : toggles old computation [default = %s]\n",  fOld? "yes": "no" );
     Abc_Print( -2, "\t-a     : toggles simple computation [default = %s]\n",  fSimple? "yes": "no" );
     Abc_Print( -2, "\t-s     : toggles signed computation [default = %s]\n",  fSigned? "yes": "no" );
+    Abc_Print( -2, "\t-b     : toggles Booth-encoded Partial Products (PPs) computation [default = %s]\n",  fBooth? "yes": "no" );
     Abc_Print( -2, "\t-v     : toggles printing verbose information [default = %s]\n",  fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-w     : toggles printing very verbose information [default = %s]\n",  fVeryVerbose? "yes": "no" );
     Abc_Print( -2, "\t-h     : print the command usage\n");

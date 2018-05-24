@@ -42,6 +42,11 @@ ABC_NAMESPACE_IMPL_START
   SeeAlso     []
 
 ***********************************************************************/
+int Gia_PolynCoreDetectTestCunxi( Gia_Man_t * pGia)
+{
+        Acec_Box_t * pBox0 = Acec_ProduceBox(pGia, 1 );
+        return 1;
+}
 void Gia_PolynCoreNonXors_rec( Gia_Man_t * pGia, Gia_Obj_t * pObj, Vec_Int_t * vXorPairs )
 {
     extern int Gia_ManSuppSizeOne( Gia_Man_t * p, Gia_Obj_t * pObj );
