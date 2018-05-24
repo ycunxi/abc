@@ -28,5 +28,4 @@ Benchmarks in "test_bench" & Saved results in "test_bench_results"
 
 ## Final remarks:
 
-Unfortunately, there is no comprehensive regression test. Good luck!                                
 Questions related to "&polyn" in THIS version, please contact Cunxi Yu cunxi.yu@epfl.ch
