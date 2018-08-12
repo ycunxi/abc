@@ -351,6 +351,11 @@ static inline void Abc_TtCountOnesInCofs( word * pTruth, int nVars, int * pStore
         }
     } 
 }
+int Abc_TtCountOnesInCofsSimple( word * pTruth, int nVars, int * pStore )
+{
+    Abc_TtCountOnesInCofs( pTruth, nVars, pStore );
+    return Abc_TtCountOnesInTruth( pTruth, nVars );
+}
 
 /**Function*************************************************************
 
@@ -489,8 +494,9 @@ int Abc_TtCountOnesInCofsFast( word * pTruth, int nVars, int * pStore )
   SeeAlso     []
 
 ***********************************************************************/
-static inline unsigned Abc_TtSemiCanonicize( word * pTruth, int nVars, char * pCanonPerm, int * pStoreOut )
+static inline unsigned Abc_TtSemiCanonicize( word * pTruth, int nVars, char * pCanonPerm, int * pStoreOut, int fOnlySwap )
 {
+    int fUseOld = 1;
     int fOldSwap = 0;
     int pStoreIn[17];
     int * pStore = pStoreOut ? pStoreOut : pStoreIn;
@@ -499,25 +505,53 @@ static inline unsigned Abc_TtSemiCanonicize( word * pTruth, int nVars, char * pC
     assert( nVars <= 16 );
     for ( i = 0; i < nVars; i++ )
         pCanonPerm[i] = i;
-    // normalize polarity    
-    nOnes = Abc_TtCountOnesInTruth( pTruth, nVars );
-    if ( nOnes > nWords * 32 )
+
+    if ( fUseOld )
     {
-        Abc_TtNot( pTruth, nWords );
-        nOnes = nWords*64 - nOnes;
-        uCanonPhase |= (1 << nVars);
+        // normalize polarity    
+        nOnes = Abc_TtCountOnesInTruth( pTruth, nVars );
+        if ( nOnes > nWords * 32 && !fOnlySwap )
+        {
+            Abc_TtNot( pTruth, nWords );
+            nOnes = nWords*64 - nOnes;
+            uCanonPhase |= (1 << nVars);
+        }
+        // normalize phase
+        Abc_TtCountOnesInCofs( pTruth, nVars, pStore );
+        pStore[nVars] = nOnes;
+        for ( i = 0; i < nVars; i++ )
+        {
+            if ( pStore[i] >= nOnes - pStore[i] || fOnlySwap )
+                continue;
+            Abc_TtFlip( pTruth, nWords, i );
+            uCanonPhase |= (1 << i);
+            pStore[i] = nOnes - pStore[i]; 
+        }
     }
-    // normalize phase
-    Abc_TtCountOnesInCofs( pTruth, nVars, pStore );
-    pStore[nVars] = nOnes;
-    for ( i = 0; i < nVars; i++ )
+    else
     {
-        if ( pStore[i] >= nOnes - pStore[i] )
-            continue;
-        Abc_TtFlip( pTruth, nWords, i );
-        uCanonPhase |= (1 << i);
-        pStore[i] = nOnes - pStore[i]; 
+        nOnes = Abc_TtCountOnesInCofsQuick( pTruth, nVars, pStore );
+        // normalize polarity    
+        if ( nOnes > nWords * 32 && !fOnlySwap )
+        {
+            for ( i = 0; i < nVars; i++ )
+                pStore[i] = nWords * 32 - pStore[i]; 
+            Abc_TtNot( pTruth, nWords );
+            nOnes = nWords*64 - nOnes;
+            uCanonPhase |= (1 << nVars);
+        }
+        // normalize phase
+        pStore[nVars] = nOnes;
+        for ( i = 0; i < nVars; i++ )
+        {
+            if ( pStore[i] >= nOnes - pStore[i] || fOnlySwap )
+                continue;
+            Abc_TtFlip( pTruth, nWords, i );
+            uCanonPhase |= (1 << i);
+            pStore[i] = nOnes - pStore[i]; 
+        }
     }
+
     // normalize permutation
     if ( fOldSwap )
     {
@@ -923,7 +957,7 @@ unsigned Abc_TtCanonicize( word * pTruth, int nVars, char * pCanonPerm )
     Abc_TtCopy( pCopy1, pTruth, nWords, 0 );
 #endif
 
-    uCanonPhase = Abc_TtSemiCanonicize( pTruth, nVars, pCanonPerm, pStoreIn );
+    uCanonPhase = Abc_TtSemiCanonicize( pTruth, nVars, pCanonPerm, pStoreIn, 0 );
     for ( k = 0; k < 5; k++ )
     {
         int fChanges = 0;
@@ -955,6 +989,53 @@ unsigned Abc_TtCanonicize( word * pTruth, int nVars, char * pCanonPerm )
         i = 0;
     }
 */
+    return uCanonPhase;
+}
+
+unsigned Abc_TtCanonicizePerm( word * pTruth, int nVars, char * pCanonPerm )
+{
+    int pStoreIn[17];
+    unsigned uCanonPhase;
+    int i, k, nWords = Abc_TtWordNum( nVars );
+    int fNaive = 1;
+
+#ifdef CANON_VERIFY
+    char pCanonPermCopy[16];
+    static word pCopy1[1024];
+    static word pCopy2[1024];
+    Abc_TtCopy( pCopy1, pTruth, nWords, 0 );
+#endif
+
+    assert( nVars <= 16 );
+    for ( i = 0; i < nVars; i++ )
+        pCanonPerm[i] = i;
+
+    uCanonPhase = Abc_TtSemiCanonicize( pTruth, nVars, pCanonPerm, pStoreIn, 1 );
+    for ( k = 0; k < 5; k++ )
+    {
+        int fChanges = 0;
+        for ( i = nVars - 2; i >= 0; i-- )
+            if ( pStoreIn[i] == pStoreIn[i+1] )
+                fChanges |= Abc_TtCofactorPerm( pTruth, i, nWords, 1, pCanonPerm, &uCanonPhase, fNaive );
+        if ( !fChanges )
+            break;
+        fChanges = 0;
+        for ( i = 1; i < nVars - 1; i++ )
+            if ( pStoreIn[i] == pStoreIn[i+1] )
+                fChanges |= Abc_TtCofactorPerm( pTruth, i, nWords, 1, pCanonPerm, &uCanonPhase, fNaive );
+        if ( !fChanges )
+            break;
+    }
+
+#ifdef CANON_VERIFY
+    Abc_TtCopy( pCopy2, pTruth, nWords, 0 );
+    memcpy( pCanonPermCopy, pCanonPerm, sizeof(char) * nVars );
+    Abc_TtImplementNpnConfig( pCopy2, nVars, pCanonPermCopy, uCanonPhase );
+    if ( !Abc_TtEqual( pCopy1, pCopy2, nWords ) )
+        printf( "Canonical form verification failed!\n" );
+#endif
+
+    assert( uCanonPhase == 0 );
     return uCanonPhase;
 }
 
@@ -1426,7 +1507,7 @@ static void CheckConfig(Abc_TgMan_t * pMan)
 	for (i = 0; i < pMan->nVars; i++)
 	{
 		assert(pPermE[i] == pMan->pPermT[i]);
-		assert(pMan->pPermTRev[pMan->pPermT[i]] == i);
+		assert(pMan->pPermTRev[(int)pMan->pPermT[i]] == i);
 	}
 	assert(Abc_TgCannonVerify(pMan));
 #endif
@@ -1478,11 +1559,11 @@ static void Abc_TgImplementPerm(Abc_TgMan_t* pMan, const char *pPermDest)
 	unsigned uPhase = pMan->uPhase & (1 << nVars);
 
 	for (i = 0; i < nVars; i++)
-		pRev[pPerm[i]] = i;
+		pRev[(int)pPerm[i]] = i;
 	for (i = 0; i < nVars; i++)
-		pPerm[i] = pRev[pPermDest[i]];
+		pPerm[i] = pRev[(int)pPermDest[i]];
 	for (i = 0; i < nVars; i++)
-		pRev[pPerm[i]] = i;
+		pRev[(int)pPerm[i]] = i;
 
 	Abc_TtImplementNpnConfig(pMan->pTruth, nVars, pRev, 0);
 	Abc_TtNormalizeSmallTruth(pMan->pTruth, nVars);
@@ -1492,7 +1573,7 @@ static void Abc_TgImplementPerm(Abc_TgMan_t* pMan, const char *pPermDest)
 		if (pMan->uPhase & (1 << pPerm[i]))
 			uPhase |= (1 << i);
 		pPerm[i] = pPermDest[i];
-		pRev[pPerm[i]] = i;
+		pRev[(int)pPerm[i]] = i;
 	}
 	pMan->uPhase = uPhase;
 }
@@ -1656,7 +1737,7 @@ static int Abc_TgGroupSymmetry(Abc_TgMan_t * pMan, TiedGroup * pGrp, int doHigh)
 //	char * symPhase = pMan->symPhase;
 	int nGVars = pGrp->nGVars;
 	char * pVars = pMan->pPerm + pGrp->iStart;
-	int modified, order = 0;
+	int modified;
 
 	for (i = 0; i < nGVars; i++)
 		fDone[i] = 0, scnt[i] = 1;
@@ -2046,7 +2127,7 @@ static void Abc_TgPhaseEnumeration(Abc_TgMan_t * pMan, Abc_TgMan_t * pBest)
 	for (i = 0; i < n; i++)
 	{
 		char iv = pMan->pPerm[i];		
-		for (j = i; j > 0 && pMan->symPhase[pFGrps[j-1]] > pMan->symPhase[iv]; j--)
+		for (j = i; j > 0 && pMan->symPhase[(int)pFGrps[j-1]] > pMan->symPhase[(int)iv]; j--)
 			pFGrps[j] = pFGrps[j - 1];
 		pFGrps[j] = iv;
 	}

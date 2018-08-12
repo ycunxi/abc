@@ -207,9 +207,15 @@ static inline void Ndr_DataPushArray( Ndr_Data_t * p, int Type, int nArray, int 
 }
 static inline void Ndr_DataPushString( Ndr_Data_t * p, int Type, char * pFunc )
 { 
+    int nBuffInts;
+    int * pBuff;
     if ( !pFunc )
         return;
-    Ndr_DataPushArray( p, Type, ((int)strlen(pFunc) + 4) / 4, (int *)pFunc );
+    nBuffInts = ((int)strlen(pFunc) + 4) / 4;
+    pBuff = (int *)calloc( 1, 4*nBuffInts );
+    memcpy( pBuff, pFunc, strlen(pFunc) );
+    Ndr_DataPushArray( p, Type, nBuffInts, pBuff );
+    free( pBuff );
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -972,7 +978,7 @@ static inline void Ndr_ModuleTestFlop()
 static inline void Ndr_ModuleTestSelSel()
 {
     // map name IDs into char strings
-    char * ppNames[12] = { NULL, "sel", "c", "d0", "d1", "d2", "d3", "out" };
+    //char * ppNames[12] = { NULL, "sel", "c", "d0", "d1", "d2", "d3", "out" };
     // name IDs
     int NameIdC      =  2;
     int NameIdD0     =  3;
@@ -1005,6 +1011,74 @@ static inline void Ndr_ModuleTestSelSel()
     Ndr_Delete( pDesign );
 }
 
+// This testing procedure creates and writes into a Verilog file 
+// the following design composed of one decoder
+
+// module dec ( input [1:0] in, output [3:0] out );
+//     wire out0 = ~in[1] & ~in[0] ;
+//     wire out1 = ~in[1] &  in[0] ;
+//     wire out2 =  in[1] & ~in[0] ;
+//     wire out3 =  in[1] &  in[0] ;
+//     assign out = { out3, out2, out1, out0 } ;
+// endmodule
+
+static inline void Ndr_ModuleTestDec()
+{
+    // map name IDs into char strings
+    //char * ppNames[12] = { NULL, "dec", "in", "out" };
+    // name IDs
+    int NameIdIn     =  2;
+    int NameIdOut    =  3;
+
+    // create a new module
+    void * pDesign = Ndr_Create( 1 );
+
+    int ModuleID = Ndr_AddModule( pDesign, 1 );
+
+    // add objects to the modele
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CI,       0,   1, 0, 0,   0, NULL,       1, &NameIdIn,     NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_SEL_DEC,  0,   3, 0, 0,   1, &NameIdIn,  1, &NameIdOut,    NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CO,       0,   3, 0, 0,   1, &NameIdOut, 0, NULL,          NULL );
+
+    Ndr_Write( "dec.ndr", pDesign );
+    Ndr_Delete( pDesign );
+}
+
+// This testing procedure creates and writes into a Verilog file 
+// the following design composed of one adder/subtractor
+
+// module addsub ( input mode, input cin, input [2:0] a, input [2:0] b, output [3:0] out );
+//     assign out = mode ? a+b+cin : a-b-cin ;
+// endmodule
+
+static inline void Ndr_ModuleTestAddSub()
+{
+    // map name IDs into char strings
+    //char * ppNames[12] = { NULL, "addsub", "mode", "cin", "a", "b", "out" };
+    // name IDs
+    int NameIdInMode =  2;
+    int NameIdInCin  =  3;
+    int NameIdInA    =  4;
+    int NameIdInB    =  5;
+    int NameIdOut    =  6;
+    int Fanins[8] = { 2, 3, 4, 5 };
+
+    // create a new module
+    void * pDesign = Ndr_Create( 1 );
+
+    int ModuleID = Ndr_AddModule( pDesign, 1 );
+
+    // add objects to the modele
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CI,          0,   0, 0, 0,   0, NULL,       1, &NameIdInMode, NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CI,          0,   0, 0, 0,   0, NULL,       1, &NameIdInCin,  NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CI,          0,   2, 0, 0,   0, NULL,       1, &NameIdInA,    NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CI,          0,   2, 0, 0,   0, NULL,       1, &NameIdInB,    NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_ARI_ADDSUB,  0,   3, 0, 0,   4, Fanins,     1, &NameIdOut,    NULL );
+    Ndr_AddObject( pDesign, ModuleID, ABC_OPER_CO,          0,   3, 0, 0,   1, &NameIdOut, 0, NULL,          NULL );
+
+    Ndr_Write( "addsub.ndr", pDesign );
+    Ndr_Delete( pDesign );
+}
 
 ABC_NAMESPACE_HEADER_END
 

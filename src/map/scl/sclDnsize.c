@@ -304,7 +304,7 @@ void Abc_SclDnsizePerformInt( SC_Lib * pLib, Abc_Ntk_t * pNtk, SC_SizePars * pPa
             p->MaxDelay = Abc_SclReadMaxDelay( p );
             if ( pPars->fUseDept && pPars->DelayUser > 0 && p->MaxDelay < pPars->DelayUser )
                 p->MaxDelay = pPars->DelayUser;
-            Abc_SclDnsizePrint( p, nRounds++, nAttempt, nOverlap, nChanges, pPars->fVeryVerbose ); 
+            //Abc_SclDnsizePrint( p, nRounds++, nAttempt, nOverlap, nChanges, pPars->fVeryVerbose ); 
             nAttemptAll += nAttempt; nOverlapAll += nOverlap; nChangesAll += nChanges;
             if ( nRuntimeLimit && Abc_Clock() > nRuntimeLimit )
                 break;

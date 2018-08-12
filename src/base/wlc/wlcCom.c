@@ -38,6 +38,7 @@ static int  Abc_CommandPdrAbs     ( Abc_Frame_t * pAbc, int argc, char ** argv )
 static int  Abc_CommandAbs2       ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int  Abc_CommandMemAbs     ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int  Abc_CommandBlast      ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int  Abc_CommandBlastMem   ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int  Abc_CommandGraft      ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int  Abc_CommandProfile    ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int  Abc_CommandShortNames ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -82,6 +83,7 @@ void Wlc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "Word level", "%abs2",        Abc_CommandAbs2,       0 );
     Cmd_CommandAdd( pAbc, "Word level", "%memabs",      Abc_CommandMemAbs,     0 );
     Cmd_CommandAdd( pAbc, "Word level", "%blast",       Abc_CommandBlast,      0 );
+    Cmd_CommandAdd( pAbc, "Word level", "%blastmem",    Abc_CommandBlastMem,   0 );
     Cmd_CommandAdd( pAbc, "Word level", "%graft",       Abc_CommandGraft,      0 );
     Cmd_CommandAdd( pAbc, "Word level", "%profile",     Abc_CommandProfile,    0 );
     Cmd_CommandAdd( pAbc, "Word level", "%short_names", Abc_CommandShortNames, 0 );
@@ -972,7 +974,7 @@ int Abc_CommandBlast( Abc_Frame_t * pAbc, int argc, char ** argv )
     Wlc_BstParDefault( pPar );
     pPar->nOutputRange = 2;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "ORAMcombdsvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "ORAMcombadsvh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -1032,6 +1034,9 @@ int Abc_CommandBlast( Abc_Frame_t * pAbc, int argc, char ** argv )
         case 'b':
             pPar->fBooth ^= 1;
             break;
+        case 'a':
+            pPar->fCla ^= 1;
+            break;
         case 'd':
             pPar->fCreateMiter ^= 1;
             break;
@@ -1083,7 +1088,7 @@ int Abc_CommandBlast( Abc_Frame_t * pAbc, int argc, char ** argv )
     Abc_FrameUpdateGia( pAbc, pNew );
     return 0;
 usage:
-    Abc_Print( -2, "usage: %%blast [-ORAM num] [-combdsvh]\n" );
+    Abc_Print( -2, "usage: %%blast [-ORAM num] [-combadsvh]\n" );
     Abc_Print( -2, "\t         performs bit-blasting of the word-level design\n" );
     Abc_Print( -2, "\t-O num : zero-based index of the first word-level PO to bit-blast [default = %d]\n", pPar->iOutput );
     Abc_Print( -2, "\t-R num : the total number of word-level POs to bit-blast [default = %d]\n",          pPar->nOutputRange );
@@ -1093,9 +1098,56 @@ usage:
     Abc_Print( -2, "\t-o     : toggle using additional POs on the word-level boundaries [default = %s]\n", pPar->fAddOutputs? "yes": "no" );
     Abc_Print( -2, "\t-m     : toggle creating boxes for all multipliers in the design [default = %s]\n",  pPar->fMulti? "yes": "no" );
     Abc_Print( -2, "\t-b     : toggle generating radix-4 Booth multipliers [default = %s]\n",              pPar->fBooth? "yes": "no" );
+    Abc_Print( -2, "\t-a     : toggle generating carry-look-ahead adder [default = %s]\n",                 pPar->fCla? "yes": "no" );
     Abc_Print( -2, "\t-d     : toggle creating dual-output miter [default = %s]\n",                        pPar->fCreateMiter? "yes": "no" );
     Abc_Print( -2, "\t-s     : toggle creating decoded MUXes [default = %s]\n",                            pPar->fDecMuxes? "yes": "no" );
     Abc_Print( -2, "\t-v     : toggle printing verbose information [default = %s]\n",                      pPar->fVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-h     : print the command usage\n");
+    return 1;
+}
+
+/**Function********************************************************************
+
+  Synopsis    []
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+******************************************************************************/
+int Abc_CommandBlastMem( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    extern Wlc_Ntk_t * Wlc_NtkMemBlast( Wlc_Ntk_t * p );
+    Wlc_Ntk_t * pNtk = Wlc_AbcGetNtk(pAbc);
+    int c, fVerbose  = 0;
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+    if ( pNtk == NULL )
+    {
+        Abc_Print( 1, "Abc_CommandGraft(): There is no current design.\n" );
+        return 0;
+    }
+    pNtk = Wlc_NtkMemBlast( pNtk );
+    Wlc_AbcUpdateNtk( pAbc, pNtk );
+    return 0;
+usage:
+    Abc_Print( -2, "usage: %%blastmem [-vh]\n" );
+    Abc_Print( -2, "\t         performs blasting of memory read/write ports\n" );
+    Abc_Print( -2, "\t-v     : toggle printing verbose information [default = %s]\n", fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-h     : print the command usage\n");
     return 1;
 }
@@ -1672,7 +1724,7 @@ int Abc_CommandTest( Abc_Frame_t * pAbc, int argc, char ** argv )
     //Wlc_NtkSimulateTest( (Wlc_Ntk_t *)pAbc->pAbcWlc );
     //pNtk = Wlc_NtkDupSingleNodes( pNtk );
     //Wlc_AbcUpdateNtk( pAbc, pNtk );
-    Ndr_ModuleTestSelSel();
+    Ndr_ModuleTestDec();
     //pNtk = Wlc_NtkMemAbstractTest( pNtk );
     //Wlc_AbcUpdateNtk( pAbc, pNtk );
     return 0;

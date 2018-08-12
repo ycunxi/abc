@@ -585,8 +585,8 @@ void Acec_PrintAdders( Vec_Wec_t * vBoxes, Vec_Int_t * vAdds )
 }
 void Acec_TreePrintBox( Acec_Box_t * pBox, Vec_Int_t * vAdds )
 {
-    //printf( "Adders:\n" );
-    //Acec_PrintAdders( pBox->vAdds, vAdds );
+    printf( "Adders:\n" );
+    Acec_PrintAdders( pBox->vAdds, vAdds );
     printf( "Inputs:\n" );
     Vec_WecPrintLits( pBox->vLeafLits );
     printf( "Outputs:\n" );

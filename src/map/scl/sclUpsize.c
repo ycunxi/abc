@@ -963,7 +963,7 @@ void Abc_SclUpsizePerformInt( SC_Lib * pLib, Abc_Ntk_t * pNtk, SC_SizePars * pPa
             nFramesNoChange++;
 
         // report and cleanup
-        Abc_SclUpsizePrint( p, i, win, Vec_IntSize(vPathPos), Vec_IntSize(vPathNodes), nUpsizes, nConeSize, pPars->fVeryVerbose || (pPars->fVerbose && nFramesNoChange == 0) ); //|| (i == nIters-1) );
+        //Abc_SclUpsizePrint( p, i, win, Vec_IntSize(vPathPos), Vec_IntSize(vPathNodes), nUpsizes, nConeSize, pPars->fVeryVerbose || (pPars->fVerbose && nFramesNoChange == 0) ); //|| (i == nIters-1) );
         nAllPos     += Vec_IntSize(vPathPos);
         nAllNodes   += Vec_IntSize(vPathNodes);
         nAllTfos    += nConeSize;

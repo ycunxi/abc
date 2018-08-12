@@ -87,7 +87,10 @@ static char * Wlc_Names[WLC_OBJ_NUMBER+1] = {
     "table",               // 53: bit table
     "READ",                // 54: mem read port
     "WRITE",               // 55: mem write port
-    NULL                   // 56: unused
+    "addsub",              // 56: adder/subtractor
+    "sel",                 // 57: selector
+    "dec",                 // 58: decoder
+    NULL                   // 58: unused
 };
 
 char * Wlc_ObjTypeName( Wlc_Obj_t * p ) { return Wlc_Names[p->Type]; }
@@ -635,6 +638,11 @@ void Wlc_NtkPrintNode( Wlc_Ntk_t * p, Wlc_Obj_t * pObj )
     if ( pObj->Type == WLC_OBJ_FO )
     {
         printf( "FO\n" );
+        return;
+    }
+    if ( pObj->Type != WLC_OBJ_CONST && Wlc_ObjFaninNum(pObj) == 0 )
+    {
+        printf( "Unknown object without fanins\n" );
         return;
     }
     if ( pObj->Type != WLC_OBJ_CONST )

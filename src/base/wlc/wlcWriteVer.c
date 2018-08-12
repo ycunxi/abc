@@ -192,7 +192,7 @@ void Wlc_WriteVerInt( FILE * pFile, Wlc_Ntk_t * p, int fNoFlops )
                 continue;
             fprintf( pFile, "  assign                         " );
         }
-        else if ( (pObj->Type == WLC_OBJ_MUX && Wlc_ObjFaninNum(pObj) > 3) || pObj->Type == WLC_OBJ_FF )
+        else if ( (pObj->Type == WLC_OBJ_MUX && Wlc_ObjFaninNum(pObj) > 3) || pObj->Type == WLC_OBJ_FF || pObj->Type == WLC_OBJ_SEL )
             fprintf( pFile, "reg  %s ", Range );
         else
             fprintf( pFile, "wire %s ", Range );
@@ -275,10 +275,60 @@ void Wlc_WriteVerInt( FILE * pFile, Wlc_Ntk_t * p, int fNoFlops )
                 fprintf( pFile, " : %s = ", Wlc_ObjName(p, i) );
                 fprintf( pFile, "%s ;\n", Wlc_ObjName(p, Wlc_ObjFaninId(pObj, k)) );
             }
+            fprintf( pFile, "               " );
+            fprintf( pFile, "default" );
+            fprintf( pFile, " : %s = ", Wlc_ObjName(p, i) );
+            fprintf( pFile, "%d\'b", Wlc_ObjRange(pObj) );
+            for ( j = Wlc_ObjRange(pObj)-1; j >= 0; j-- )
+                fprintf( pFile, "%d", 0 );
+            fprintf( pFile, " ;\n" );
             fprintf( pFile, "             " );
             fprintf( pFile, "endcase\n" );
             fprintf( pFile, "           " );
             fprintf( pFile, "end\n" );
+            continue;
+        }
+        else if ( pObj->Type == WLC_OBJ_DEC )
+        {
+            int nRange = Wlc_ObjRange(Wlc_ObjFanin0(p, pObj));
+            assert( (1 << nRange) == Wlc_ObjRange(pObj) );
+            fprintf( pFile, "%s ;\n", Wlc_ObjName(p, i) );
+            for ( k = 0; k < Wlc_ObjRange(pObj); k++ )
+            {
+                fprintf( pFile, "         " );
+                fprintf( pFile, "wire " );
+                fprintf( pFile, "%s_", Wlc_ObjName(p, i) );
+                for ( j = 0; j < nRange; j++ )
+                    fprintf( pFile, "%d", (k >> (nRange-1-j)) & 1 );
+                fprintf( pFile, " = " );
+                for ( j = 0; j < nRange; j++ )
+                    fprintf( pFile, "%s%s%s[%d]", 
+                        j ? " & ":"", ((k >> (nRange-1-j)) & 1) ? " ":"~", 
+                        Wlc_ObjName(p, Wlc_ObjFaninId(pObj, 0)), nRange-1-j );
+                fprintf( pFile, " ;\n" );
+            }
+            fprintf( pFile, "         " );
+            fprintf( pFile, "assign %s = { ", Wlc_ObjName(p, i) );
+            for ( k = Wlc_ObjRange(pObj)-1; k >= 0; k-- )
+            {
+                fprintf( pFile, "%s%s_", k < Wlc_ObjRange(pObj)-1 ? ", ":"", Wlc_ObjName(p, i) );
+                for ( j = 0; j < nRange; j++ )
+                    fprintf( pFile, "%d", (k >> (nRange-1-j)) & 1 );
+            }
+            fprintf( pFile, " } ;\n" );
+            continue;
+        }
+        else if ( pObj->Type == WLC_OBJ_ARI_ADDSUB )
+        {
+            // out = mode ? a+b+cin : a-b-cin
+            fprintf( pFile, "%s ;\n", Wlc_ObjName(p, i) );
+            fprintf( pFile, "         " );
+            fprintf( pFile, "assign " );
+            fprintf( pFile, "%s = %s ? %s + %s + %s : %s - %s - %s ;\n", 
+                        Wlc_ObjName(p, i), Wlc_ObjName(p, Wlc_ObjFaninId0(pObj)),
+                        Wlc_ObjName(p, Wlc_ObjFaninId2(pObj)), Wlc_ObjName(p, Wlc_ObjFaninId(pObj,3)), Wlc_ObjName(p, Wlc_ObjFaninId1(pObj)),
+                        Wlc_ObjName(p, Wlc_ObjFaninId2(pObj)), Wlc_ObjName(p, Wlc_ObjFaninId(pObj,3)), Wlc_ObjName(p, Wlc_ObjFaninId1(pObj)) 
+                   );
             continue;
         }
         else if ( pObj->Type == WLC_OBJ_READ || pObj->Type == WLC_OBJ_WRITE )
@@ -425,7 +475,8 @@ void Wlc_WriteVerInt( FILE * pFile, Wlc_Ntk_t * p, int fNoFlops )
                     fprintf( pFile, "#" );
                 else 
                 {
-                    assert( 0 );
+                    //assert( 0 );
+                    printf( "Failed to write node \"%s\" with unknown operator type (%d).\n", Wlc_ObjName(p, i), pObj->Type );
                     fprintf( pFile, "???\n" );
                     continue;
                 }

@@ -100,7 +100,8 @@ typedef enum {
     WLC_OBJ_WRITE,         // 55: write port
     WLC_OBJ_ARI_ADDSUB,    // 56: adder-subtractor
     WLC_OBJ_SEL,           // 57: positionally encoded selector
-    WLC_OBJ_NUMBER         // 57: unused
+    WLC_OBJ_DEC,           // 58: decoder
+    WLC_OBJ_NUMBER         // 59: unused
 } Wlc_ObjType_t;
 // when adding new types, remember to update table Wlc_Names in "wlcNtk.c"
 
@@ -208,6 +209,7 @@ struct Wlc_BstPar_t_
     int                    fAddOutputs;
     int                    fMulti;
     int                    fBooth;
+    int                    fCla;
     int                    fNoCleanup;
     int                    fCreateMiter;
     int                    fDecMuxes;
@@ -226,6 +228,7 @@ static inline void Wlc_BstParDefault( Wlc_BstPar_t * pPar )
     pPar->fAddOutputs  =  0;
     pPar->fMulti       =  0;
     pPar->fBooth       =  0;
+    pPar->fCla         =  0;
     pPar->fCreateMiter =  0;
     pPar->fDecMuxes    =  0;
     pPar->fVerbose     =  0;
