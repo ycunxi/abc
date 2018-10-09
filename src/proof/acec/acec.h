@@ -71,6 +71,7 @@ extern Gia_Man_t *   Acec_ManDecla( Gia_Man_t * pGia, int fBooth, int fVerbose )
 /*=== acecCore.c ========================================================*/
 extern void          Acec_ManCecSetDefaultParams( Acec_ParCec_t * p );
 extern int           Acec_Solve( Gia_Man_t * pGia0, Gia_Man_t * pGia1, Acec_ParCec_t * pPars );
+extern int           Acec_SingleBox( Gia_Man_t * pGia0  );
 /*=== acecFadds.c ========================================================*/
 extern Vec_Int_t *   Gia_ManDetectFullAdders( Gia_Man_t * p, int fVerbose, Vec_Int_t ** vCutsXor2 );
 extern Vec_Int_t *   Gia_ManDetectHalfAdders( Gia_Man_t * p, int fVerbose );

@@ -544,6 +544,43 @@ int Acec_Solve( Gia_Man_t * pGia0, Gia_Man_t * pGia1, Acec_ParCec_t * pPars )
     return status;
 }
 
+
+/**Function*************************************************************
+
+  Synopsis    [Single Adder-PPs Box]
+
+  Description [Added by Cunxi Yu]
+               
+  SideEffects [NOT SUPPORTED OFFICIALLY BY ABC]
+
+  SeeAlso     [ycunxi@umass.edu]
+
+***********************************************************************/
+int Acec_SingleBox( Gia_Man_t * pGia0  )
+{
+    int status = -1;
+    abctime clk = Abc_Clock();
+    Gia_Man_t * pGia0n = pGia0;
+    Cec_ParCec_t ParsCec, * pCecPars = &ParsCec;
+//    Vec_Bit_t * vIgnore0 = pPars->fBooth ? Acec_BoothFindPPG(pGia0) : NULL;
+//    Vec_Bit_t * vIgnore1 = pPars->fBooth ? Acec_BoothFindPPG(pGia1) : NULL;
+//    Acec_Box_t * pBox0 = Acec_DeriveBox( pGia0, vIgnore0, 0, 0, pPars->fVerbose );
+//    Acec_Box_t * pBox1 = Acec_DeriveBox( pGia1, vIgnore1, 0, 0, pPars->fVerbose );
+//    Vec_BitFreeP( &vIgnore0 );
+//    Vec_BitFreeP( &vIgnore1 );
+    Acec_Box_t * pBox0 = Acec_ProduceBox2( pGia0 );
+    if ( pBox0 == NULL ) // no box detected
+        printf( "Cannot find arithmetic boxes in both LHS and RHS for &aspec\n" );
+    else 
+    {
+        printf( "Found arithmetic boxes in both LHS and RHS for &aspec\n" );
+    }
+    Acec_BoxFreeP( &pBox0 );
+    return 1;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
 ////////////////////////////////////////////////////////////////////////

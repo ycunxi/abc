@@ -510,6 +510,7 @@ static int Abc_CommandAbc9Fadds              ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandAbc9ATree              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Polyn              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Acec               ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandAbc9Aspec              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Anorm              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Decla              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Esop               ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -1201,6 +1202,7 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "ABC9",         "&atree",        Abc_CommandAbc9ATree,        0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&polyn",        Abc_CommandAbc9Polyn,        0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&acec",         Abc_CommandAbc9Acec,         0 );
+    Cmd_CommandAdd( pAbc, "ABC9",         "&aspec",         Abc_CommandAbc9Aspec,         0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&anorm",        Abc_CommandAbc9Anorm,        0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&decla",        Abc_CommandAbc9Decla,        0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&esop",         Abc_CommandAbc9Esop,         0 );
@@ -42955,6 +42957,91 @@ usage:
     Abc_Print( -2, "\t         Here is the signature of a signed 2-bit multiplier: \"(0*o0+1*o1+2*o2-3*o3)\"\n" );
     return 1;
 }
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandAbc9Aspec( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    FILE * pFile;
+    Acec_ParCec_t ParsCec, * pPars = &ParsCec;
+    char ** pArgvNew;
+    int c, nArgcNew;
+    Acec_ManCecSetDefaultParams( pPars );
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+    pArgvNew = argv + globalUtilOptind;
+    nArgcNew = argc - globalUtilOptind;
+    if ( nArgcNew == 0 || nArgcNew == 1 )
+    {
+        Gia_Man_t * pSecond;
+        char * pTemp, * FileName = NULL;
+        if ( nArgcNew == 0 )
+        {
+            FileName = pAbc->pGia->pSpec;
+            if ( FileName == NULL )
+            {
+                Abc_Print( -1, "File name is not given on the command line.\n" );
+                return 1;
+            }
+        }
+        else // if ( nArgcNew == 1 )
+        {
+            FileName = pArgvNew[0];
+            // fix the wrong symbol
+            for ( pTemp = FileName; *pTemp; pTemp++ )
+                if ( *pTemp == '>' )
+                    *pTemp = '\\';
+            if ( (pFile = fopen( FileName, "r" )) == NULL )
+            {
+                Abc_Print( -1, "Cannot open input file \"%s\". ", FileName );
+                if ( (FileName = Extra_FileGetSimilarName( FileName, ".aig", NULL, NULL, NULL, NULL )) )
+                    Abc_Print( 1, "Did you mean \"%s\"?", FileName );
+                Abc_Print( 1, "\n" );
+                return 1;
+            }
+            fclose( pFile );
+        }
+        pSecond = Gia_AigerRead( FileName, 0, 0, 0 );
+        if ( pSecond == NULL )
+        {
+            Abc_Print( -1, "Reading AIGER has failed.\n" );
+            return 0;
+        }
+        Acec_SingleBox( pSecond  );
+        Gia_ManStop( pSecond );
+    }
+    else
+    {
+        Abc_Print( -1, "Wrong command-line arguments.\n" );
+        return 1;
+    }
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: &aspec <file> \n" );
+    Abc_Print( -2, "\t         combinational equivalence checking for arithmetic circuits\n" );
+    return 1;
+}
+
+
 
 /**Function*************************************************************
 

@@ -596,6 +596,13 @@ void Acec_TreePrintBox( Acec_Box_t * pBox, Vec_Int_t * vAdds )
 //    printf( "Node %d has level %d.\n", 278, Gia_ObjLevelId(pBox->pGia, 278) );
 //    printf( "Node %d has level %d.\n", 597, Gia_ObjLevelId(pBox->pGia, 597) );
 }
+void Acec_TreePrintBox2( Acec_Box_t * pBox, Vec_Int_t * vAdds )
+{
+    printf( "Inputs:\n" );
+    Vec_WecPrintLits( pBox->vLeafLits );
+    return; 
+}
+
 
 int Acec_CreateBoxMaxRank( Vec_Int_t * vTree )
 {

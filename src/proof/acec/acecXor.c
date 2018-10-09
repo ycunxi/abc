@@ -424,6 +424,49 @@ Acec_Box_t * Acec_ProduceBox( Gia_Man_t * p, int fVerbose )
     return pBox;
 }
 
+Acec_Box_t * Acec_ProduceBox2( Gia_Man_t * p )
+{
+    extern void Acec_TreeVerifyConnections( Gia_Man_t * p, Vec_Int_t * vAdds, Vec_Wec_t * vBoxes );
+
+    abctime clk = Abc_Clock();
+    Acec_Box_t * pBox = NULL;
+    Vec_Int_t * vXors, * vAdds = Ree_ManComputeCuts( p, &vXors, 0 );
+    Vec_Int_t * vTemp, * vXorRoots = Acec_FindXorRoots( p, vXors ); 
+    Vec_Int_t * vRanks = Acec_RankTrees( p, vXors, vXorRoots ); 
+    Vec_Wec_t * vXorLeaves, * vAddBoxes = NULL; 
+
+    Gia_ManLevelNum(p);
+
+    printf( "Detected %d full-adders and %d half-adders.  Found %d XOR-cuts.  ", 
+            Ree_ManCountFadds(vAdds), Vec_IntSize(vAdds)/6-Ree_ManCountFadds(vAdds), Vec_IntSize(vXors)/4 );
+    Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
+
+    vXorRoots = Acec_OrderTreeRoots( p, vAdds, vTemp = vXorRoots, vRanks );
+    Vec_IntFree( vTemp );
+    Vec_IntFree( vRanks );
+
+    vRanks = Acec_RankTrees( p, vXors, vXorRoots ); 
+    vXorLeaves = Acec_FindXorLeaves( p, vXors, vAdds, vXorRoots, vRanks, &vAddBoxes ); 
+    Vec_IntFree( vRanks );
+
+    printf( "XOR roots after reordering: \n" );
+    Vec_IntPrint( vXorRoots );
+
+    Acec_TreeVerifyConnections( p, vAdds, vAddBoxes );
+
+    pBox = Acec_FindBox( p, vAdds, vAddBoxes, vXorLeaves, vXorRoots );
+
+    Acec_TreePrintBox2( pBox, vAdds );
+
+    Vec_IntFree( vXorRoots );
+    Vec_WecFree( vXorLeaves );
+
+    Vec_IntFree( vXors );
+    Vec_IntFree( vAdds );
+
+    return pBox;
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
