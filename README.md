@@ -28,7 +28,7 @@ Benchmarks in "test_bench" & Saved results in "test_bench_results"
 
 ## ABC Booth Example
 
-### ./abc -c "%read abc-booth-32.v; %blast -b; &write abc-booth-32.aig;&aspec abc-booth-32.aig"
+### ./abc -c "%read mult-32.v; %blast -b; &write abc-booth-32.aig;&aspec abc-booth-32.aig"
 #### %read abc-booth-32.v; %blast -b;   => generate a booth multiplier using word blasting function in ABC
 #### &write abc-booth-32.aig;           => write into a *.aig file
 #### &aspec abc-booth-32.aig;           => generate a specification for the given booth encoded multiplier
