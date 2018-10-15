@@ -83,7 +83,7 @@ extern Gia_Man_t *   Acec_InsertBox( Acec_Box_t * pBox, int fAll );
 /*=== acecTree.c ========================================================*/
 extern void          Acec_PrintAdders( Vec_Wec_t * vBoxes, Vec_Int_t * vAdds );
 extern void          Acec_TreePrintBox( Acec_Box_t * pBox, Vec_Int_t * vAdds );
-extern void          Acec_TreePrintBox2( Acec_Box_t * pBox, Vec_Int_t * vAdds );
+extern void          Acec_TreePrintBox2( Acec_Box_t * pBox, Vec_Int_t * vAdds , int fVerbose);
 extern Acec_Box_t *  Acec_DeriveBox( Gia_Man_t * p, Vec_Bit_t * vIgnore, int fFilterIn, int fFilterOut, int fVerbose );
 extern void          Acec_BoxFreeP( Acec_Box_t ** ppBox );
 /*=== acecUtil.c ========================================================*/

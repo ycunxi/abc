@@ -556,7 +556,7 @@ int Acec_Solve( Gia_Man_t * pGia0, Gia_Man_t * pGia1, Acec_ParCec_t * pPars )
   SeeAlso     [ycunxi@umass.edu]
 
 ***********************************************************************/
-int Acec_SingleBox( Gia_Man_t * pGia0  )
+int Acec_SingleBox( Gia_Man_t * pGia0  , int fVerbose)
 {
     int status = -1;
     abctime clk = Abc_Clock();
@@ -568,7 +568,7 @@ int Acec_SingleBox( Gia_Man_t * pGia0  )
 //    Acec_Box_t * pBox1 = Acec_DeriveBox( pGia1, vIgnore1, 0, 0, pPars->fVerbose );
 //    Vec_BitFreeP( &vIgnore0 );
 //    Vec_BitFreeP( &vIgnore1 );
-    Acec_Box_t * pBox0 = Acec_ProduceBox2( pGia0 );
+    Acec_Box_t * pBox0 = Acec_ProduceBox2( pGia0, fVerbose );
     if ( pBox0 == NULL ) // no box detected
         printf( "Cannot find arithmetic boxes in both LHS and RHS for &aspec\n" );
     else 

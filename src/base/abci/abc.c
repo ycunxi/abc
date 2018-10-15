@@ -42977,10 +42977,14 @@ int Abc_CommandAbc9Aspec( Abc_Frame_t * pAbc, int argc, char ** argv )
     int c, nArgcNew;
     Acec_ManCecSetDefaultParams( pPars );
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    int fVerbose = 1;
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vh" ) ) != EOF )
     {
         switch ( c )
         {
+        case 'v':
+            fVerbose ^= 1; 
+            break;
         case 'h':
             goto usage;
         default:
@@ -43025,7 +43029,7 @@ int Abc_CommandAbc9Aspec( Abc_Frame_t * pAbc, int argc, char ** argv )
             Abc_Print( -1, "Reading AIGER has failed.\n" );
             return 0;
         }
-        Acec_SingleBox( pSecond  );
+        Acec_SingleBox( pSecond , fVerbose);
         Gia_ManStop( pSecond );
     }
     else
@@ -43036,8 +43040,9 @@ int Abc_CommandAbc9Aspec( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: &aspec <file> \n" );
-    Abc_Print( -2, "\t         combinational equivalence checking for arithmetic circuits\n" );
+    Abc_Print( -2, "usage: &aspec file.aig \n" );
+    Abc_Print( -2, "\t     Generate adder-trees and spectrum\n" );
+    Abc_Print( -2, "\t-v     : toggle algebraic spectrum only [default = False]\n");
     return 1;
 }
 

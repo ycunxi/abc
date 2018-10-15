@@ -1,0 +1,15 @@
+# Benchmark "b" written by ABC on Sat Oct 13 13:23:19 2018
+.model b
+.inputs a[0] b[0] c[0]
+.outputs z[0]
+.names a[0] b[0] n5
+11 1
+.names a[0] b[0] n6
+00 1
+.names n5 n6 n7
+00 1
+.names c[0] n7 n8
+11 1
+.names n5 n8 z[0]
+00 0
+.end

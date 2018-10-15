@@ -424,7 +424,7 @@ Acec_Box_t * Acec_ProduceBox( Gia_Man_t * p, int fVerbose )
     return pBox;
 }
 
-Acec_Box_t * Acec_ProduceBox2( Gia_Man_t * p )
+Acec_Box_t * Acec_ProduceBox2( Gia_Man_t * p , int fVerbose)
 {
     extern void Acec_TreeVerifyConnections( Gia_Man_t * p, Vec_Int_t * vAdds, Vec_Wec_t * vBoxes );
 
@@ -456,7 +456,7 @@ Acec_Box_t * Acec_ProduceBox2( Gia_Man_t * p )
 
     pBox = Acec_FindBox( p, vAdds, vAddBoxes, vXorLeaves, vXorRoots );
 
-    Acec_TreePrintBox2( pBox, vAdds );
+    Acec_TreePrintBox2( pBox, vAdds , fVerbose);
 
     Vec_IntFree( vXorRoots );
     Vec_WecFree( vXorLeaves );

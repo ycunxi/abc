@@ -596,10 +596,26 @@ void Acec_TreePrintBox( Acec_Box_t * pBox, Vec_Int_t * vAdds )
 //    printf( "Node %d has level %d.\n", 278, Gia_ObjLevelId(pBox->pGia, 278) );
 //    printf( "Node %d has level %d.\n", 597, Gia_ObjLevelId(pBox->pGia, 597) );
 }
-void Acec_TreePrintBox2( Acec_Box_t * pBox, Vec_Int_t * vAdds )
+void Acec_TreePrintBox2( Acec_Box_t * pBox, Vec_Int_t * vAdds , int fVerbose)
 {
-    printf( "Inputs:\n" );
-    Vec_WecPrintLits( pBox->vLeafLits );
+    Vec_Int_t * vVec ;
+    int i, k, iLit;
+    if (fVerbose){
+    Vec_WecForEachLevel( pBox->vLeafLits, vVec, i )
+    {
+        printf( " %4d : %2d  {", i, Vec_IntSize(vVec) );
+        Vec_IntForEachEntry( vVec, iLit, k )
+            printf( " %c%d", Abc_LitIsCompl(iLit) ? '-' : '+', Abc_Lit2Var(iLit) );
+        printf( " }\n" );
+    }
+    }
+    else
+    {
+        Vec_WecForEachLevel( pBox->vLeafLits, vVec, i )
+            printf( " %4d : %2d  \n", i, Vec_IntSize(vVec) );
+        printf( "\n" );
+    }
+
     return; 
 }
 
