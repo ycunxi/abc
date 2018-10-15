@@ -1,0 +1,25 @@
+# Benchmark "Multi2" written by ABC on Mon Oct 15 10:14:29 2018
+.model Multi2
+.inputs a0 a1 b0 b1
+.outputs m0 m1 m2 m3
+.names a0 b0 m0
+11 1
+.names a1 b0 n10
+11 1
+.names a0 b1 n11
+11 1
+.names n10 n11 n12
+11 1
+.names n10 n11 n13
+00 1
+.names n12 n13 m1
+00 1
+.names a1 b1 n15
+11 1
+.names n12 n15 m3
+11 1
+.names n12 n15 n17
+00 1
+.names m3 n17 m2
+00 1
+.end
