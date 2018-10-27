@@ -2,6 +2,9 @@
 
 ### See original ABC github https://github.com/berkeley-abc/abc
 
+### News
+#### Gallery of algebraic spectrum are online!
+https://ycunxi.github.io/cunxiyu/spectrum_gallery.html
 
 ### Compiling:
 
