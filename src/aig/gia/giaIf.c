@@ -2124,6 +2124,24 @@ void Gia_ManConfigPrint2( unsigned char * pConfigData, int nLeaves )
     }
 }
 
+static inline word Gia_ManFromIfPermuteTruth4( word Truth, int nLeaves, word z )
+{
+    word TruthNew = 0;
+    int i, k, x;
+    assert( nLeaves >= 1 && nLeaves <= 4 );
+    for ( i = 0; i < 16; i++ )
+    {
+        x = 0;
+        for ( k = 0; k < nLeaves; k++ )
+        {
+            int v = (int)((z >> (2 * k)) & 3);
+            x |= ((i >> k) & 1) << v;
+        }
+        TruthNew |= ((Truth >> x) & 1) << i;
+    }
+    return TruthNew;
+}
+
 /**Function*************************************************************
 
   Synopsis    [Derive configurations.]
@@ -2145,6 +2163,7 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
     {
         word z = If_CutPerformDeriveJ( pIfMan, (unsigned *)pTruth, nLeaves, nLeaves, NULL, 1, fDelay );
         int fHavePerm = (z != 0) && ((z & ABC_CONST(0x4000000000000000)) != 0);
+        word Truth = pTruth[0];
         // Cell type 0: Simple LUT4
         CellId = 0;
         // Write CellId
@@ -2158,7 +2177,8 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
         for ( ; i < 4; i++ )
             Vec_StrPush( vConfigs2, 0 );
         // Write truth table (16 bits for LUT4)
-        word Truth = pTruth[0];
+        if ( fHavePerm )
+            Truth = Gia_ManFromIfPermuteTruth4( Truth, nLeaves, z );
         Vec_StrPush( vConfigs2, (char)((Truth >> 8) & 0xFF) );
         Vec_StrPush( vConfigs2, (char)(Truth & 0xFF) );
         assert( startPos + 7 == Vec_StrSize(vConfigs2) );

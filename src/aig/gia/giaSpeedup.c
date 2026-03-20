@@ -57,7 +57,7 @@ static int Gia_ManConfig2GetBytePos( Gia_Man_t * p, int iObj )
     }
     return -1;
 }
-static int Gia_ManConfig2DerivePinDelays( Gia_Man_t * p, int iObj, If_LibCell_t * pCellLib, int * pPinDelay, int nLutSize )
+int Gia_ManConfig2DerivePinDelays( Gia_Man_t * p, int iObj, If_LibCell_t * pCellLib, int * pPinDelay, int nLutSize )
 {
     int bytePos, i, nPins;
     unsigned char CellId;
@@ -76,7 +76,7 @@ static int Gia_ManConfig2DerivePinDelays( Gia_Man_t * p, int iObj, If_LibCell_t 
     {
         int v = (unsigned char)Vec_StrEntry( p->vConfigs2, bytePos + 1 + i );
         if ( v >= 2 && v < 2 + nLutSize )
-            pPinDelay[v - 2] = pCellLib->pCellPinDelays[CellId][i];
+            pPinDelay[v - 2] = Abc_MaxInt( pPinDelay[v - 2], pCellLib->pCellPinDelays[CellId][i] );
     }
     return 1;
 }
