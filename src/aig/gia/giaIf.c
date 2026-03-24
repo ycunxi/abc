@@ -2157,6 +2157,8 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
 {
     int i, CellId;
     int startPos = Vec_StrSize(vConfigs2);
+    If_LibCell_t * pCellLib = pIfMan && pIfMan->pPars ? pIfMan->pPars->pCellLib : NULL;
+    assert( pCellLib != NULL );
 
     // Determine cell type based on the number of leaves and configuration
     if ( nLeaves <= 4 ) // 7 bytes = 1 byte CellId + 4 bytes mapping + 2 bytes truth table
@@ -2181,7 +2183,7 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
             Truth = Gia_ManFromIfPermuteTruth4( Truth, nLeaves, z );
         Vec_StrPush( vConfigs2, (char)((Truth >> 8) & 0xFF) );
         Vec_StrPush( vConfigs2, (char)(Truth & 0xFF) );
-        assert( startPos + 7 == Vec_StrSize(vConfigs2) );
+        assert( startPos + pCellLib->pCellRecordSizes[CellId] == Vec_StrSize(vConfigs2) );
         //Gia_ManConfigPrint( Truth, 0, nLeaves );
     }
     else // 12 bytes = 1 byte CellId + 7 bytes mapping + 4 bytes truth tables
@@ -2226,7 +2228,7 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
             Vec_StrPush( vConfigs2, (char)(Truth1 & 0xFF) );
             Vec_StrPush( vConfigs2, (char)((Truth2 >> 8) & 0xFF) );
             Vec_StrPush( vConfigs2, (char)(Truth2 & 0xFF) );
-            assert( startPos + 12 == Vec_StrSize(vConfigs2) );
+            assert( startPos + pCellLib->pCellRecordSizes[CellId] == Vec_StrSize(vConfigs2) );
         }
         else // 14 bytes = 1 byte CellId + 9 bytes mapping + 4 bytes truth tables
         {
@@ -2251,7 +2253,7 @@ void Gia_ManFromIfGetConfig2( Vec_Str_t * vConfigs2, If_Man_t * pIfMan, word * p
             Vec_StrPush( vConfigs2, (char)(Truth1 & 0xFF) );
             Vec_StrPush( vConfigs2, (char)((Truth2 >> 8) & 0xFF) );
             Vec_StrPush( vConfigs2, (char)(Truth2 & 0xFF) );
-            assert( startPos + 14 == Vec_StrSize(vConfigs2) );
+            assert( startPos + pCellLib->pCellRecordSizes[CellId] == Vec_StrSize(vConfigs2) );
         }
     }
     if ( pIfMan->pPars->fVerboseTrace ) 

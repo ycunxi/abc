@@ -33,27 +33,26 @@ ABC_NAMESPACE_IMPL_START
 ///                     FUNCTION DEFINITIONS                         ///
 ////////////////////////////////////////////////////////////////////////
 
-static int Gia_ManConfig2GetBytePos( Gia_Man_t * p, int iObj )
+static int Gia_ManConfig2GetBytePos( Gia_Man_t * p, int iObj, If_LibCell_t * pCellLib )
 {
     int iLut, bytePos = 0;
-    if ( p == NULL || p->vConfigs2 == NULL )
+    if ( p == NULL || p->vConfigs2 == NULL || pCellLib == NULL )
         return -1;
     Gia_ManForEachLut( p, iLut )
     {
         unsigned char CellId;
+        int nRecordSize;
         if ( bytePos >= Vec_StrSize(p->vConfigs2) )
             return -1;
         if ( iLut == iObj )
             return bytePos;
         CellId = (unsigned char)Vec_StrEntry( p->vConfigs2, bytePos );
-        if ( CellId == 0 )
-            bytePos += 7;
-        else if ( CellId == 1 )
-            bytePos += 12;
-        else if ( CellId == 2 )
-            bytePos += 14;
-        else
+        if ( CellId >= IF_MAX_LUTSIZE )
             return -1;
+        nRecordSize = pCellLib->pCellRecordSizes[CellId];
+        if ( nRecordSize <= 0 )
+            return -1;
+        bytePos += nRecordSize;
     }
     return -1;
 }
@@ -65,7 +64,7 @@ int Gia_ManConfig2DerivePinDelays( Gia_Man_t * p, int iObj, If_LibCell_t * pCell
         return 0;
     for ( i = 0; i < nLutSize; i++ )
         pPinDelay[i] = 1;
-    bytePos = Gia_ManConfig2GetBytePos( p, iObj );
+    bytePos = Gia_ManConfig2GetBytePos( p, iObj, pCellLib );
     if ( bytePos < 0 || bytePos >= Vec_StrSize(p->vConfigs2) )
         return 0;
     CellId = (unsigned char)Vec_StrEntry( p->vConfigs2, bytePos );
