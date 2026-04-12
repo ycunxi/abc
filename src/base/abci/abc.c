@@ -579,6 +579,7 @@ static int Abc_CommandAbc9GroupProve         ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandAbc9MultiProve         ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9SplitProve         ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9SProve             ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandAbc9SProve2            ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9SplitSat           ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9Bmc                ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAbc9SBmc               ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -684,7 +685,9 @@ extern void Extra_BitMatrixTransposeP( Vec_Wrd_t * vSimsIn, int nWordsIn, Vec_Wr
 typedef struct Wlc_Ntk_t_    Wlc_Ntk_t;
 typedef struct Wlc_BstPar_t_ Wlc_BstPar_t;
 extern Gia_Man_t * Wlc_NtkBitBlast( Wlc_Ntk_t * p, Wlc_BstPar_t * pPars );
-extern int Cec_GiaProveTest( Gia_Man_t * p, int nProcs, int nTimeOut, int nTimeOut2, int nTimeOut3, int fUseUif, Wlc_Ntk_t * pWlc, int fVerbose, int fVeryVerbose, int fSilent );
+extern int Cec_GiaProveTest( Gia_Man_t * p, int nProcs, int nTimeOut, int nTimeOut2, int nTimeOut3, int fUseUif, Wlc_Ntk_t * pWlc, int fVerbose, int fVeryVerbose, int fSilent, char * pReplayFile );
+extern int Cec_GiaReplayReadParams( char * pFileName, int * pnProcs, int * pnTimeOut, int * pnTimeOut2, int * pnTimeOut3, int * pfUseUif );
+extern int Cec_GiaReplayTest( Gia_Man_t * p, Wlc_Ntk_t * pWlc, char * pFileName, int fVerbose, int fVeryVerbose, int fSilent );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -1421,7 +1424,8 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "ABC9",         "&gprove",       Abc_CommandAbc9GroupProve,   0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&mprove",       Abc_CommandAbc9MultiProve,   0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&splitprove",   Abc_CommandAbc9SplitProve,   0 );
-    Cmd_CommandAdd( pAbc, "ABC9",         "&sprove",       Abc_CommandAbc9SProve,       0 );    
+    Cmd_CommandAdd( pAbc, "ABC9",         "&sprove",       Abc_CommandAbc9SProve,       0 );
+    Cmd_CommandAdd( pAbc, "ABC9",         "&sprove2",      Abc_CommandAbc9SProve2,      0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&splitsat",     Abc_CommandAbc9SplitSat,     0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&bmc",          Abc_CommandAbc9Bmc,          0 );
     Cmd_CommandAdd( pAbc, "ABC9",         "&bmcs",         Abc_CommandAbc9SBmc,         0 );
@@ -51553,9 +51557,10 @@ int Abc_CommandAbc9SProve( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     Gia_Man_t * pGiaUse = pAbc->pGia, * pGiaTemp = NULL;
     Wlc_Ntk_t * pWlc = (Wlc_Ntk_t *)pAbc->pAbcWlc;
+    char * pReplayFile = NULL;
     int c, nProcs = 6, nProcsNew = 0, nTimeOut = 3, nTimeOut2 = 10, nTimeOut3 = 100, fUseUif = 0, fVerbose = 0, fVeryVerbose = 0, fSilent = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "PTUWusvwh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "PTUWRusvwh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -51604,6 +51609,15 @@ int Abc_CommandAbc9SProve( Abc_Frame_t * pAbc, int argc, char ** argv )
             if ( nTimeOut3 <= 0 )
                 goto usage;
             break;                          
+        case 'R':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-R\" should be followed by a file name.\n" );
+                goto usage;
+            }
+            pReplayFile = argv[globalUtilOptind];
+            globalUtilOptind++;
+            break;
         case 'u':
             fUseUif ^= 1;
             break;
@@ -51658,20 +51672,124 @@ int Abc_CommandAbc9SProve( Abc_Frame_t * pAbc, int argc, char ** argv )
             Gia_ManStop( pGiaUse );
         return 1;
     }
-    pAbc->Status = Cec_GiaProveTest( pGiaUse, nProcs, nTimeOut, nTimeOut2, nTimeOut3, fUseUif, pWlc, fVerbose, fVeryVerbose, fSilent );
+    pAbc->Status = Cec_GiaProveTest( pGiaUse, nProcs, nTimeOut, nTimeOut2, nTimeOut3, fUseUif, pWlc, fVerbose, fVeryVerbose, fSilent, pReplayFile );
     Abc_FrameReplaceCex( pAbc, &pGiaUse->pCexSeq ); 
     if ( fUseUif )
         Gia_ManStop( pGiaUse );
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: &sprove [-PTUW num] [-usvwh]\n" );
+    Abc_Print( -2, "usage: &sprove [-PTUW num] [-R file] [-usvwh]\n" );
     Abc_Print( -2, "\t         proves CEC problem by case-splitting\n" );
     Abc_Print( -2, "\t-P num : the number of concurrent processes (1 <= num <= 6) [default = %d]\n", nProcs );
     Abc_Print( -2, "\t-T num : runtime limit in seconds per subproblem [default = %d]\n",     nTimeOut );
     Abc_Print( -2, "\t-U num : runtime limit in seconds per subproblem [default = %d]\n",     nTimeOut2 );
     Abc_Print( -2, "\t-W num : runtime limit in seconds per subproblem [default = %d]\n",     nTimeOut3 );
+    Abc_Print( -2, "\t-R str : dump replay/trace file for later execution by &sprove2\n" );
     Abc_Print( -2, "\t-u     : enable concurrent UFAR on word-level design (uses internal %%blast + &miter -x)\n" );
+    Abc_Print( -2, "\t-s     : enable silent computation (no reporting) [default = %s]\n",    fSilent? "yes": "no" );
+    Abc_Print( -2, "\t-v     : toggle printing verbose information [default = %s]\n",         fVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-w     : toggle printing more verbose information [default = %s]\n",    fVeryVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-h     : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandAbc9SProve2( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    Gia_Man_t * pGiaUse = pAbc->pGia, * pGiaTemp = NULL;
+    Wlc_Ntk_t * pWlc = (Wlc_Ntk_t *)pAbc->pAbcWlc;
+    char * pTraceFile = NULL;
+    int c, nProcs = 0, nTimeOut = 0, nTimeOut2 = 0, nTimeOut3 = 0, fUseUif = 0, fVerbose = 0, fVeryVerbose = 0, fSilent = 0;
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "svwh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 's':
+            fSilent ^= 1;
+            break;
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'w':
+            fVeryVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+    if ( globalUtilOptind >= argc )
+    {
+        Abc_Print( -1, "Command &sprove2 expects a replay file name.\n" );
+        goto usage;
+    }
+    pTraceFile = argv[globalUtilOptind];
+    globalUtilOptind++;
+    if ( globalUtilOptind != argc )
+        goto usage;
+    if ( !Cec_GiaReplayReadParams( pTraceFile, &nProcs, &nTimeOut, &nTimeOut2, &nTimeOut3, &fUseUif ) )
+    {
+        Abc_Print( -1, "Abc_CommandAbc9SProve2(): Cannot read replay file \"%s\".\n", pTraceFile );
+        return 1;
+    }
+    if ( fUseUif )
+    {
+        pGiaUse = NULL;
+        if ( pWlc == NULL )
+        {
+            Abc_Print( -1, "Abc_CommandAbc9SProve2(): Replay requires word-level design for UIF mode.\n" );
+            return 1;
+        }
+        pGiaTemp = Wlc_NtkBitBlast( pWlc, NULL );
+        if ( pGiaTemp == NULL )
+        {
+            Abc_Print( -1, "Abc_CommandAbc9SProve2(): Word-level bit-blasting has failed.\n" );
+            return 1;
+        }
+        if ( (Gia_ManPoNum(pGiaTemp) & 1) == 1 )
+        {
+            Abc_Print( -1, "Abc_CommandAbc9SProve2(): Internal \"&miter -x\" requires even number of bit-level outputs.\n" );
+            Gia_ManStop( pGiaTemp );
+            return 1;
+        }
+        pGiaUse = Gia_ManTransformMiter2( pGiaTemp );
+        Gia_ManStop( pGiaTemp );
+        pGiaTemp = NULL;
+    }
+    if ( pGiaUse == NULL )
+    {
+        Abc_Print( -1, "Abc_CommandAbc9SProve2(): There is no AIG.\n" );
+        return 1;
+    }
+    if ( Gia_ManRegNum(pGiaUse) == 0 )
+    {
+        Abc_Print( -1, "Abc_CommandAbc9SProve2(): The problem is combinational.\n" );
+        if ( fUseUif )
+            Gia_ManStop( pGiaUse );
+        return 1;
+    }
+    pAbc->Status = Cec_GiaReplayTest( pGiaUse, pWlc, pTraceFile, fVerbose, fVeryVerbose, fSilent );
+    Abc_FrameReplaceCex( pAbc, &pGiaUse->pCexSeq );
+    if ( fUseUif )
+        Gia_ManStop( pGiaUse );
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: &sprove2 <trace_file> [-svwh]\n" );
+    Abc_Print( -2, "\t         replays &sprove strategy stored in the given trace file\n" );
     Abc_Print( -2, "\t-s     : enable silent computation (no reporting) [default = %s]\n",    fSilent? "yes": "no" );
     Abc_Print( -2, "\t-v     : toggle printing verbose information [default = %s]\n",         fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-w     : toggle printing more verbose information [default = %s]\n",    fVeryVerbose? "yes": "no" );
