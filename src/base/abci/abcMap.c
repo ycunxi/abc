@@ -59,7 +59,7 @@ static Abc_Obj_t *  Abc_NodeFromMapSuperChoice_rec( Abc_Ntk_t * pNtkNew, Map_Sup
   SeeAlso     []
 
 ***********************************************************************/
-Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose )
+Abc_Ntk_t * Abc_NtkMapSelectiveFanout( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int nSkipFanoutRefs3, int nSkipFanoutRefs4, int fUseProfile, int fUseBuffs, int fVerbose )
 {
     static int fUseMulti = 0;
     int fShowSwitching = 1;
@@ -149,6 +149,7 @@ Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTa
 clk = Abc_Clock();
     Map_ManSetSwitching( pMan, fSwitching );
     Map_ManSetSkipFanout( pMan, fSkipFanout );
+    Map_ManSetSkipFanoutLimits( pMan, nSkipFanoutRefs3, nSkipFanoutRefs4 );
     if ( fUseProfile )
         Map_ManSetUseProfile( pMan );
     if ( LogFan != 0 )
@@ -183,6 +184,11 @@ ABC_PRT( "Total runtime", Abc_Clock() - clkTotal );
         return NULL;
     }
     return pNtkNew;
+}
+
+Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose )
+{
+    return Abc_NtkMapSelectiveFanout( pNtk, userLib, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, 3, 1, fUseProfile, fUseBuffs, fVerbose );
 }
 
 /**Function*************************************************************
@@ -1238,4 +1244,3 @@ void Abc_NtkSetAndGateDelay( Abc_Frame_t * pAbc, float Delay )
 
 
 ABC_NAMESPACE_IMPL_END
-

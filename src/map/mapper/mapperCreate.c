@@ -74,6 +74,7 @@ void            Map_ManSetChoiceNum( Map_Man_t * p, int nChoices )         { p->
 void            Map_ManSetVerbose( Map_Man_t * p, int fVerbose )           { p->fVerbose = fVerbose;     }   
 void            Map_ManSetSwitching( Map_Man_t * p, int fSwitching )       { p->fSwitching = fSwitching; }   
 void            Map_ManSetSkipFanout( Map_Man_t * p, int fSkipFanout )     { p->fSkipFanout = fSkipFanout; }   
+void            Map_ManSetSkipFanoutLimits( Map_Man_t * p, int nRefs3, int nRefs4 ) { p->nSkipFanoutRefs3 = nRefs3; p->nSkipFanoutRefs4 = nRefs4; }
 void            Map_ManSetUseProfile( Map_Man_t * p )                      { p->fUseProfile = 1;         }   
 void            Map_ManCreateAigIds( Map_Man_t * p, int nObjs )            { p->pAigNodeIDs = ABC_CALLOC( int, nObjs ); }   
 
@@ -205,6 +206,8 @@ Map_Man_t * Map_ManCreate( int nInputs, int nOutputs, int fVerbose )
     p->nVarsMax  = p->pSuperLib->nVarsMax;
     p->fVerbose  = fVerbose;
     p->fEpsilon  = (float)0.001;
+    p->nSkipFanoutRefs3 = 3;
+    p->nSkipFanoutRefs4 = 1;
     assert( p->nVarsMax > 0 );
 
     if ( p->nVarsMax == 5 )

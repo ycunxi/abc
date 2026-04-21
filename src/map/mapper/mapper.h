@@ -109,6 +109,7 @@ extern void            Map_ManSetChoiceNum( Map_Man_t * p, int nChoices );
 extern void            Map_ManSetVerbose( Map_Man_t * p, int fVerbose );
 extern void            Map_ManSetSwitching( Map_Man_t * p, int fSwitching );
 extern void            Map_ManSetSkipFanout( Map_Man_t * p, int fSkipFanout );
+extern void            Map_ManSetSkipFanoutLimits( Map_Man_t * p, int nRefs3, int nRefs4 );
 extern void            Map_ManSetUseProfile( Map_Man_t * p );
 extern void            Map_ManCreateAigIds( Map_Man_t * p, int nObjs );   
 

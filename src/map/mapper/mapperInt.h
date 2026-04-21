@@ -124,6 +124,8 @@ struct Map_ManStruct_t_
     int                 nTravIds;      // the traversal counter
     int                 fSwitching;    // use switching activity
     int                 fSkipFanout;   // skip large gates when mapping high-fanout nodes
+    int                 nSkipFanoutRefs3; // skip 3+-leaf cuts above this fanout count
+    int                 nSkipFanoutRefs4; // skip 4+-leaf cuts above this fanout count
     int                 fUseProfile;   // use standard-cell profile
 
     // the supergate library
