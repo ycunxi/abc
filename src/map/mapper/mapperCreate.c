@@ -103,9 +103,6 @@ void            Map_NodeSetRepr( Map_Node_t * p, Map_Node_t * pRepr )       { p-
 void            Map_NodeSetSwitching( Map_Node_t * p, float Switching )     { p->Switching = Switching; }
 void            Map_NodeSetAigId( Map_Node_t * p, int Id )            { p->p->pAigNodeIDs[p->Num] = Id; }
 
-;
-
-
 /**Function*************************************************************
 
   Synopsis    [Checks the type of the node.]
@@ -290,7 +287,7 @@ void Map_ManFree( Map_Man_t * p )
   SeeAlso     []
 
 ***********************************************************************/
-void Map_ManCreateNodeDelays( Map_Man_t * p, int LogFan )
+void Map_ManCreateNodeDelays( Map_Man_t * p, float LogFan )
 {
     Map_Node_t * pNode;
     int k;
@@ -591,4 +588,3 @@ void Map_NodeSetChoice( Map_Man_t * pMan, Map_Node_t * pNodeOld, Map_Node_t * pN
 ////////////////////////////////////////////////////////////////////////
 
 ABC_NAMESPACE_IMPL_END
-
