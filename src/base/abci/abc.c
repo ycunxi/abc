@@ -674,6 +674,7 @@ extern int Abc_CommandAbcLivenessToSafetySim ( Abc_Frame_t * pAbc, int argc, cha
 extern int Abc_CommandAbcLivenessToSafetyWithLTL( Abc_Frame_t * pAbc, int argc, char ** argv );
 extern int Abc_CommandCS_kLiveness           ( Abc_Frame_t * pAbc, int argc, char ** argv );
 extern int Abc_CommandNChooseK               ( Abc_Frame_t * pAbc, int argc, char ** argv );
+extern int Abc_CommandStmap0                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
 
 extern Aig_Man_t * Abc_NtkToDar( Abc_Ntk_t * pNtk, int fExors, int fRegisters );
 extern Abc_Ntk_t * Abc_NtkFromAigPhase( Aig_Man_t * pMan );
@@ -1143,6 +1144,7 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "Choicing",     "rec_merge3",    Abc_CommandRecMerge3,        0 );
 
     Cmd_CommandAdd( pAbc, "SC mapping",   "map",           Abc_CommandMap,              1 );
+    Cmd_CommandAdd( pAbc, "SC mapping",   "stmap0",        Abc_CommandStmap0,           1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "amap",          Abc_CommandAmap,             1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "phase_map",     Abc_CommandPhaseMap,         1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "stochmap",      Abc_CommandStochMap,         1 );
