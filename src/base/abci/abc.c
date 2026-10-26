@@ -57114,10 +57114,12 @@ usage:
 int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     extern void Gia_PolynBuild2Test( Gia_Man_t * pGia, char * pSign, int nExtra, int fSigned, int fVerbose, int fVeryVerbose );
-    Vec_Int_t * vOrder = NULL; char * pSign = NULL;
-    int c, nExtra = 0, fOld = 0, fSimple = 1, fSigned = 0, fVerbose = 0, fVeryVerbose = 0;
+    extern void Gia_PolynSetModExp( int k );
+    extern void Gia_PolynSetTrace( FILE * pFile );
+    Vec_Int_t * vOrder = NULL; char * pSign = NULL; char * pTrace = NULL; FILE * pFileTrace = NULL;
+    int c, nExtra = 0, nModExp = 0, fOld = 0, fSimple = 1, fSigned = 0, fVerbose = 0, fVeryVerbose = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "NSoasvwh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "NMSToasvwh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -57131,6 +57133,26 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
             globalUtilOptind++;
             if ( nExtra < 0 )
                 goto usage;
+            break;
+        case 'M':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-M\" should be followed by an integer.\n" );
+                goto usage;
+            }
+            nModExp = atoi(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( nModExp < 0 )
+                goto usage;
+            break;
+        case 'T':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-T\" should be followed by a file name.\n" );
+                goto usage;
+            }
+            pTrace = argv[globalUtilOptind];
+            globalUtilOptind++;
             break;
         case 'S':
             if ( globalUtilOptind >= argc )
@@ -57179,13 +57201,31 @@ int Abc_CommandAbc9Polyn( Abc_Frame_t * pAbc, int argc, char ** argv )
         Vec_IntFreeP( &vOrder );
     }
     else
+    {
+        if ( pTrace && (pFileTrace = fopen( pTrace, "w" )) == NULL )
+        {
+            Abc_Print( -1, "Cannot open trace file \"%s\".\n", pTrace );
+            return 0;
+        }
+        Gia_PolynSetModExp( nModExp );
+        Gia_PolynSetTrace( pFileTrace );
         Gia_PolynBuild2Test( pAbc->pGia, pSign, nExtra, fSigned, fVerbose, fVeryVerbose );
+        Gia_PolynSetModExp( 0 );
+        Gia_PolynSetTrace( NULL );
+        if ( pFileTrace )
+            fclose( pFileTrace );
+    }
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: &polyn [-N num] [-oasvwh] [-S str]\n" );
+    Abc_Print( -2, "usage: &polyn [-NM num] [-oasvwh] [-S str] [-T file]\n" );
     Abc_Print( -2, "\t         derives algebraic polynomial from AIG\n" );
     Abc_Print( -2, "\t-N num : the number of additional primary outputs (-1 = unused) [default = %d]\n", nExtra );
+    Abc_Print( -2, "\t-M num : reduce coefficients modulo 2^num during rewriting (0 = off) [default = %d]\n", nModExp );
+    Abc_Print( -2, "\t         (for specs that hold modulo 2^num, e.g. num-bit truncated multipliers;\n" );
+    Abc_Print( -2, "\t         new engine only)\n" );
+    Abc_Print( -2, "\t-T file: write the rewriting trace (\"node touched live\" per substituted node)\n" );
+    Abc_Print( -2, "\t         to a file (new engine only)\n" );
     Abc_Print( -2, "\t-o     : toggles old computation [default = %s]\n",  fOld? "yes": "no" );
     Abc_Print( -2, "\t-a     : toggles simple computation [default = %s]\n",  fSimple? "yes": "no" );
     Abc_Print( -2, "\t-s     : toggles signed computation [default = %s]\n",  fSigned? "yes": "no" );

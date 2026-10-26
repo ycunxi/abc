@@ -434,13 +434,41 @@ static inline void Gia_PolynMergeConst( Vec_Int_t * vTempC, Hsh_VecMan_t * pHash
     Vec_IntCheckUniqueOrderAbs( vConstAdd );
     //Vec_IntPrint( vConstAdd );
 }
+// Optional reduction of coefficients modulo 2^k (k = 0: off). For a circuit whose spec
+// holds modulo 2^k (e.g. an n-bit truncated multiplier, k = n), terms whose coefficient
+// becomes 0 mod 2^k are dropped during rewriting instead of being carried to the inputs.
+// A coefficient is a sum of entries e encoding sign(e) * 2^(|e|-1); entries with
+// |e| - 1 >= k are 0 mod 2^k.
+static int    s_PolynModExp = 0;
+// Optional rewriting trace: one line "obj touched live" per substituted node.
+static FILE * s_PolynTrace  = NULL;
+void Gia_PolynSetModExp( int k )       { s_PolynModExp = k; }
+void Gia_PolynSetTrace( FILE * pFile ) { s_PolynTrace  = pFile; }
+static inline void Gia_PolynModReduce( Vec_Int_t * vConst )
+{
+    int i, e, k = 0;
+    if ( s_PolynModExp == 0 )
+        return;
+    Vec_IntForEachEntry( vConst, e, i )
+        if ( Abc_AbsInt(e) <= s_PolynModExp )
+            Vec_IntWriteEntry( vConst, k++, e );
+    Vec_IntShrink( vConst, k );
+}
 static inline int Gia_PolynBuildAdd( Hsh_VecMan_t * pHashC, Hsh_VecMan_t * pHashM, Vec_Int_t * vCoefs, 
                                      Vec_Wec_t * vLit2Mono, Vec_Int_t * vTempC, Vec_Int_t * vTempM )
 {
     int i, iLit, iConst, iConstNew;
     int iMono = Hsh_VecManAdd(pHashM, vTempM);
+    Gia_PolynModReduce( vTempC );
     if ( iMono == Vec_IntSize(vCoefs) ) // new monomial
     {
+        if ( Vec_IntSize(vTempC) == 0 ) // vanished modulo 2^k
+        {
+            Vec_IntPush( vCoefs, 0 );
+            Vec_IntForEachEntry( vTempM, iLit, i )
+                Vec_WecPush( vLit2Mono, iLit, iMono );
+            return 0;
+        }
         // map monomial into a constant
         assert( Vec_IntSize(vTempC) > 0 );
         iConst = Hsh_VecManAdd( pHashC, vTempC );
@@ -457,6 +485,7 @@ static inline int Gia_PolynBuildAdd( Hsh_VecMan_t * pHashC, Hsh_VecMan_t * pHash
     iConst = Vec_IntEntry( vCoefs, iMono );
     if ( iConst )
         Gia_PolynMergeConst( vTempC, pHashC, iConst );
+    Gia_PolynModReduce( vTempC );
     iConstNew = Hsh_VecManAdd( pHashC, vTempC );
     Vec_IntWriteEntry( vCoefs, iMono, iConstNew );
     //printf( "Old monomial: \n" );
@@ -734,9 +763,11 @@ Vec_Wec_t * Gia_PolynBuildNew( Gia_Man_t * pGia, Vec_Wec_t * vSign, Vec_Int_t * 
     {
         Gia_Obj_t * pObj = Gia_ManObj( pGia, iObj );
         Vec_Int_t * vArray = Vec_WecEntry( vLit2Mono, iObj );
+        int nTouched = 0;
         Vec_IntForEachEntry( vArray, iMono, k )
             if ( (iConst = Vec_IntEntry(vCoefs, iMono)) > 0 )
             {
+                nTouched++;
                 Vec_Int_t * vArrayC = Hsh_VecReadEntry( pHashC, iConst );
                 Vec_Int_t * vArrayM = Hsh_VecReadEntry( pHashM, iMono );
                 Gia_PolynPrepare4( vTempC, vTempM, vArrayC, vArrayM, iObj, Gia_ObjFaninId0(pObj, iObj), Gia_ObjFaninId1(pObj, iObj) );
@@ -770,6 +801,8 @@ Vec_Wec_t * Gia_PolynBuildNew( Gia_Man_t * pGia, Vec_Wec_t * vSign, Vec_Int_t * 
                 nBuilds++;
             }
         //printf( "Obj %5d : nMonos = %6d  nUsed = %6d\n", iObj, nBuilds, nMonos );
+        if ( s_PolynTrace && nTouched )
+            fprintf( s_PolynTrace, "%d %d %d\n", iObj, nTouched, nMonos );
     }
 
     // get the results
